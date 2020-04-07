@@ -135,6 +135,8 @@ public class MainActivity extends AppCompatActivity {
     public void onStart() {
         super.onStart();
 
+        mLocationAddressTextView.setText("");
+
         if (!checkPermissions()) {
             requestPermissions();
         } else {
@@ -239,7 +241,7 @@ public class MainActivity extends AppCompatActivity {
      * Updates the address in the UI.
      */
     private void displayAddressOutput() {
-        mLocationAddressTextView.setText(mAddressOutput);
+        mLocationAddressTextView.append("\n"+mAddressOutput);
     }
 
     /**

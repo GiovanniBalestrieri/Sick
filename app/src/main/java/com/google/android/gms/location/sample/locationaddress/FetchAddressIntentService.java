@@ -22,6 +22,7 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.ResultReceiver;
 import android.text.TextUtils;
 import android.util.Log;
@@ -46,6 +47,16 @@ public class FetchAddressIntentService extends IntentService {
      * The receiver where results are forwarded from this service.
      */
     private ResultReceiver mReceiver;
+    // We need to use this Handler package
+
+
+    // Create the Handler object (on the main thread by default)
+    private Handler handler = new Handler();
+
+    private Location location;
+
+
+    private long mDelay = 5000;
 
     /**
      * This constructor is required, and calls the super IntentService(String)
@@ -67,7 +78,6 @@ public class FetchAddressIntentService extends IntentService {
      */
     @Override
     protected void onHandleIntent(Intent intent) {
-        String errorMessage = "";
 
         mReceiver = intent.getParcelableExtra(Constants.RECEIVER);
 
@@ -78,30 +88,42 @@ public class FetchAddressIntentService extends IntentService {
         }
 
         // Get the location passed to this service through an extra.
-        Location location = intent.getParcelableExtra(Constants.LOCATION_DATA_EXTRA);
+        location = intent.getParcelableExtra(Constants.LOCATION_DATA_EXTRA);
+        handler.post(mTask);
 
-        // Make sure that the location data was really sent over through an extra. If it wasn't,
-        // send an error error message and return.
-        if (location == null) {
-            errorMessage = getString(R.string.no_location_data_provided);
-            Log.wtf(TAG, errorMessage);
-            deliverResultToReceiver(Constants.FAILURE_RESULT, errorMessage);
-            return;
-        }
-
-        StringBuilder bundleLocation  = new StringBuilder(100);
-        bundleLocation.append(Double.toString(location.getLongitude()));
-        bundleLocation.append(",");
-        bundleLocation.append(Double.toString(location.getLatitude()));
-        bundleLocation.append(",");
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss");
-        String data = simpleDateFormat.format(new Date());
-        bundleLocation.append(data);
-
-        Log.d("AAA",bundleLocation.toString());
-
-        deliverResultToReceiver(Constants.SUCCESS_RESULT,bundleLocation.toString());
     }
+
+    private final Runnable mTask = new Runnable() {
+        @Override
+        public void run() {
+
+
+            String errorMessage = "";
+
+            // Make sure that the location data was really sent over through an extra. If it wasn't,
+            // send an error error message and return.
+            if (location == null) {
+                errorMessage = getString(R.string.no_location_data_provided);
+                Log.wtf(TAG, errorMessage);
+                deliverResultToReceiver(Constants.FAILURE_RESULT, errorMessage);
+                return;
+            }
+
+            StringBuilder bundleLocation  = new StringBuilder(100);
+            bundleLocation.append(Double.toString(location.getLongitude()));
+            bundleLocation.append(",");
+            bundleLocation.append(Double.toString(location.getLatitude()));
+            bundleLocation.append(",");
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss");
+            String data = simpleDateFormat.format(new Date());
+            bundleLocation.append(data);
+
+            deliverResultToReceiver(Constants.SUCCESS_RESULT,bundleLocation.toString());
+
+            handler.postDelayed(this, mDelay);
+        }
+    };
+
 
     /**
      * Sends a resultCode and message to the receiver.
